@@ -19,5 +19,6 @@ import api.views
 
 urlpatterns = [
     # url(r'^admin/', admin.site.urls),
-    url(r'^query/$', api.views.json_query)
+    url(r'^query/$', api.views.json_query),
+    url(r'^add_data/$', api.views.insert_data),
 ]
