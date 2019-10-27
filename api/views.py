@@ -11,7 +11,7 @@ def json_query(request):
     query = request.GET.get('values', None)
     if query is not None:
         query = json.loads(query)
-    _, = parse_engine.from_json_get_result(query)
+    parse_engine.from_json_get_result(query)
     response = 'syntax correct~'
     return HttpResponse('<p>' + response + '</p>')
 
