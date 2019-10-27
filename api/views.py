@@ -16,7 +16,7 @@ def json_query(request):
     return HttpResponse('<p>' + response + '</p>')
 
 def insert_data(request):
-    data = request.POST.get('datas', None)
+    data = request.body
     if data is not None:
         data = json.loads(data)
     is_ok = fake_data.to_test1(data)
