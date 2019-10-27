@@ -21,40 +21,31 @@ def from_json_get_result(query):
     if query.get('select'):
         select = query['select']
     table1 = get_model(select['from'])
-    result = table1.objects.all()
+    # result = table1.objects.all()
     # 处理 filter
     if select.get('filter') is not None:
         result = table1.objects.filter(**select['filter'])
     # 处理 aggregation
     if select.get('aggregation') is not None:
-        agg_dict = {
-            'field3__count': getattr(django.db.models, 'Count')('field3'),
-            'field4__sum': getattr(django.db.models, 'Sum')('field4'),
-            'field4__avg': getattr(django.db.models, 'Avg')('field4'),
-            'field5__count_distinct': getattr(django.db.models, 'Count')('field5', distinct=True)
-        }
-        result = table1.objects.annotate(**agg_dict)
-        # for it in select['aggregation']:
-        #     pass
-        # result = table1.objects.annotate(Count('field3'), Sum('field4'), Avg('field4'), Count('field5', distinct=True))
-        # for agg_field in select['aggregation']:
-        #     field = agg_field[:agg_field.find('_')]
-        #     if agg_field.find('count') != -1:
-        #         if agg_field.find('distinct') != -1:
-        #             # values用于去重，order_by用于定义别名
-        #             result |= table1.objects.annotate(Count(field)).distinct(field).order_by(field)
-        #         else:
-        #             result |= table1.objects.annotate(Count(field))
-        #     if agg_field.find('sum') != -1:
-        #         if agg_field.find('distinct') != -1:
-        #             result |= table1.objects.values(field).annotate(Sum(field)).order_by(field)
-        #         else:
-        #             result |= table1.objects.annotate(Sum(field))
-        #     if agg_field.find('avg') != -1:
-        #         if agg_field.find('distinct') != -1:
-        #             result |= table1.objects.values(field).annotate(Avg(field)).order_by(field)
-        #         else:
-        #             result |= table1.objects.annotate(Avg(field))
+        agg_dict = dict()
+        for it in select['aggregation']:
+            field = it[:it.find('_')]
+            if it.find('count') != -1:
+                if it.find('distinct') != -1:
+                    agg_dict.update({it: getattr(django.db.models, 'Count')(field, distinct=True)})
+                else:
+                    agg_dict.update({it: getattr(django.db.models, 'Count')(field)})
+            if it.find('sum') != -1:
+                if it.find('distinct') != -1:
+                    agg_dict.update({it: getattr(django.db.models, 'Sum')(field, distinct=True)})
+                else:
+                    agg_dict.update({it: getattr(django.db.models, 'Sum')(field)})
+            if it.find('avg') != -1:
+                if it.find('distinct') != -1:
+                    agg_dict.update({it: getattr(django.db.models, 'Avg')(field, distinct=True)})
+                else:
+                    agg_dict.update({it: getattr(django.db.models, 'Avg')(field)})
+        result |= table1.objects.annotate(**agg_dict)
 
     if result.exists():
         serialize_data = serialize('json', result)
