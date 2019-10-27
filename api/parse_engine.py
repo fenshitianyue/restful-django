@@ -5,6 +5,8 @@
 
 import api.models
 import django.db.models
+from django.core.serializers import serialize
+import json
 # from django.db.models import Sum, Count, Avg
 # import sys
 # reload(sys)
@@ -54,9 +56,10 @@ def from_json_get_result(query):
         #         else:
         #             result |= table1.objects.annotate(Avg(field))
 
-
-    # print type(result)
-    # print result.exists()
-
+    if result.exists():
+        serialize_data = serialize('json', result)
+        print serialize_data
+    else:
+        print "not found"
     # TODO:将结果构造成一个字典，然后返回json.dumps(dict)
     return result
