@@ -30,14 +30,10 @@ def from_json_get_result(query):
     #     result = table1.objects.filter(**select['filter'])
     # 处理 aggregation
     if select.get('aggregation') is not None:
+        arguments = list()
+        fields = get_fields(select['fields'])
         for it in select['aggregation']:
             # 收集fields中单独的field
-            fields = get_fields(select['fields'])
-            fields.append(getattr(querybuilder.query, 'SumField')('field4', alias='field4__sum'))
-            fields.append(getattr(querybuilder.query, 'AvgField')('field4', alias='field4__avg'))
-            fields.append(getattr(querybuilder.query, 'CountField')('field5', alias='field5__count_distinct', distinct=True))
-            para_list = list()
-            para_list.append(fields)
             field = it[:it.find('_')]
             if it.find('count') != -1:
                 if it.find('distinct') != -1:
@@ -54,8 +50,8 @@ def from_json_get_result(query):
                     fields.append(getattr(querybuilder.query, 'AvgField')(field, alias=it, distinct=True))
                 else:
                     fields.append(getattr(querybuilder.query, 'AvgField')(field, alias=it))
-
-        query = Query().from_table(table1, *para_list).where(**select['filter'])
+        arguments.append(fields)
+        query = Query().from_table(table1, *arguments).where(**select['filter'])
 
         print '----------------------------------------------'
         print query.get_sql()
