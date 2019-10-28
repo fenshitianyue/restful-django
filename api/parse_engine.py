@@ -19,20 +19,20 @@ def from_json_get_result(query):
     # 处理 filter
     if select.get('filter') is not None:
         result = table1.objects.filter(**select['filter'])
-    # print query.get_sql()
-    # print query.select()
-    if select.get('aggregation') is not None:
-        # query = Query().from_table(table1, *select['aggregation'])
+    # 处理 aggregation
+    # if select.get('aggregation') is not None:
         para_list = list()
-        para_list.append('field1')
-        # para_list.append('field2')
-        para_list.append(getattr(querybuilder.query, 'CountField')('field3', alias='field3__count'))
+        field_list = list(['field1', 'field2'])
+        field_list.append(getattr(querybuilder.query, 'CountField')('field3', alias='field3__count'))
+        field_list.append(getattr(querybuilder.query, 'SumField')('field4', alias='field4__sum'))
+        field_list.append(getattr(querybuilder.query, 'AvgField')('field4', alias='field4__avg'))
+        field_list.append(getattr(querybuilder.query, 'CountField')('field5', alias='field5__count_distinct', distinct=True))
+        para_list.append(field_list)
         query = Query().from_table(table1, *para_list).where(**select['filter'])
+        print query.get_sql()
         print type(query)
         print type(result)
 
-    # 处理 aggregation
-    # if select.get('aggregation') is not None:
     #     agg_dict = dict()
     #     for it in select['aggregation']:
     #         field = it[:it.find('_')]
