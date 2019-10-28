@@ -2,7 +2,6 @@
 
 import api.models
 import django.db.models
-from django.core.serializers import serialize
 import json
 from querybuilder.query import Query
 import querybuilder.query
@@ -12,6 +11,7 @@ def get_model(model_name):
 
 def get_fields(field_list):
     fields = list()
+    # fields.append('field1')
     for it in field_list:
         if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
             continue
@@ -51,11 +51,16 @@ def from_json_get_result(query):
                 else:
                     fields.append(getattr(querybuilder.query, 'AvgField')(field, alias=it))
         arguments.append(fields)
-        query = Query().from_table(table1, *arguments).where(**select['filter'])
+        group_list = list()
+        group_list.append('field1')
+        group_list.append('field2')
 
+        query = Query().from_table(table1, *arguments).where(**select['filter']).group_by(*group_list)
         print '----------------------------------------------'
         print query.get_sql()
         print '----------------------------------------------'
+        query.select()
+
 
     # if result.exists():
     #     pass
