@@ -5,6 +5,7 @@ import django.db.models
 import json
 from querybuilder.query import Query
 import querybuilder.query
+import querybuilder.fields
 
 def get_model(model_name):
     return getattr(api.models, model_name)
@@ -52,14 +53,15 @@ def from_json_get_result(query):
                     fields.append(getattr(querybuilder.query, 'AvgField')(field, alias=it))
         arguments.append(fields)
         group_list = list()
-        group_list.append('field1')
-        group_list.append('field2')
-
-        query = Query().from_table(table1, *arguments).where(**select['filter']).group_by(*group_list)
+        group_list.append(querybuilder.fields.Field('field1'))
+        group_list.append(querybuilder.fields.Field('field2'))
+        print group_list
+        query = Query().from_table(table1, *arguments).where(**select['filter']).order_by('-field1').group_by(*group_list)
+        # .group_by(*group_list)
         print '----------------------------------------------'
         print query.get_sql()
         print '----------------------------------------------'
-        query.select()
+        # query.select()
 
 
     # if result.exists():
