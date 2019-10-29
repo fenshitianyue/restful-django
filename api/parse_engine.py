@@ -4,6 +4,8 @@ import api.models
 import django.db.models
 import json
 import pandas as pd
+# from django.core.paginator import Paginator
+# from djcompoundqueryset import CompoundQueryset
 
 def get_model(model_name):
     return getattr(api.models, model_name)
@@ -51,12 +53,22 @@ def from_json_get_result(query):
     print '------------------------------------------------------'
     print result.query
     print '------------------------------------------------------'
+    # combinded_queryset = CompoundQueryset(result, result2)
+    # result3 = Paginator(combinded_queryset, 10)
+    # print type(result3)
+    # print result3
+    # print '------------------------------------------------------'
 
     df1 = pd.DataFrame(list(result))
     df2 = pd.DataFrame(list(result2))
 
     result = df1.merge(df2, on=fields)
+    print df1.head()
+    print '------------------------------------------------------'
+    print df2.head()
+    print '------------------------------------------------------'
     print result.head()
+    print '------------------------------------------------------'
 
     ####################################################
 
