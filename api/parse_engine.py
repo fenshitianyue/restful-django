@@ -59,7 +59,8 @@ def from_json_get_result(query):
         if select.get('order_by') is not None:
             for it in select['order_by']:
                 query = query.order_by(it)
-
+        table_limit = 200
+        query = query.limit(table_limit)
         # 多表解析
         table2 = getattr(api.models, 'Test2')
         p_list = list()
@@ -68,17 +69,21 @@ def from_json_get_result(query):
         p_list.append(fields)
         filters = dict({'field1': 'Test1', 'field2__gt': 5, 'field3__contais': 'world'})
 
-        query2 = Query().from_table(table2, *p_list).where(**filters)
-        print query2.get_sql()
+        # query2 = Query().from_table(table2, *p_list).where(**filters).limit(table_limit)
+        # print query2.get_sql()
         # query.join(right_table=query2)
+        # query2 = query.from_table(table2, *p_list).where(**filters).limit(table_limit)
         sql_injection = 'api_test1.field1=api_test2.field1;drop table api_test1 AND api_test1.field2=api_test2.field2'
         conditions = 'api_test1.field1=api_test2.field1 api_test1 AND api_test1.field2=api_test2.field2'
-        query.join(right_table='Test2', fields=fields, condition=conditions, join_type='left join')
-
+        # query.join(right_table='Test2', fields=fields, condition=conditions, join_type='left join')
         print '----------------------------------------------'
+        print type(query)
         print query.get_sql()
         print '----------------------------------------------'
         # query.select()
+
+        # pandas:将查出来的单表数据集用这个做一个转换，然后用这个库来在内存中做join
+        # django queryset to pandas
 
 
     # TODO:将结果构造成一个字典，然后返回json.dumps(dict)
