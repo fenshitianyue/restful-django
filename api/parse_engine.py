@@ -71,8 +71,9 @@ def from_json_get_result(query):
         query2 = Query().from_table(table2, *p_list).where(**filters)
         print query2.get_sql()
         # query.join(right_table=query2)
-        conditions = 'api_test1.field1=api_test2.field1 AND api_test1.field2=api_test2.field2'
-        query.join(right_table='Test2', condition=conditions, join_type='left join')
+        sql_injection = 'api_test1.field1=api_test2.field1;drop table api_test1 AND api_test1.field2=api_test2.field2'
+        conditions = 'api_test1.field1=api_test2.field1 api_test1 AND api_test1.field2=api_test2.field2'
+        query.join(right_table='Test2', fields=fields, condition=conditions, join_type='left join')
 
         print '----------------------------------------------'
         print query.get_sql()
