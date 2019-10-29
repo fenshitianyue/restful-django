@@ -53,19 +53,19 @@ def from_json_get_result(query):
                     fields.append(getattr(querybuilder.query, 'AvgField')(field, alias=it))
         arguments.append(fields)
         group_list = list()
-        # group_list.append(querybuilder.fields.Field('field1'))
-        # group_list.append({'field1': 'field1', 'field2': 'field2'})
         group_list.append('field1')
         group_list.append('field2')
-        # group_list.append({'field2': 'field2'})
-        print group_list
-        query = Query().from_table(table1, *arguments).where(**select['filter']).order_by('-field1').group_by('field1')
-        query = query.group_by('field2')
-        # .group_by(*group_list)
+        query = Query().from_table(table1, *arguments).where(**select['filter'])
+        if select.get('group_by') is not None:
+            for it in select['group_by']:
+                query = query.group_by(it)
+        if select.get('order_by') is not None:
+            for it in select['order_by']:
+                query = query.order_by(it)
         print '----------------------------------------------'
         print query.get_sql()
         print '----------------------------------------------'
-        # query.select()
+        query.select()
 
 
     # if result.exists():
