@@ -3,6 +3,7 @@
 import api.models
 import django.db.models
 import json
+import pandas as pd
 
 def get_model(model_name):
     return getattr(api.models, model_name)
@@ -45,12 +46,18 @@ def from_json_get_result(query):
     filters = {'field1': 'test1', 'field2__gt': 5, 'field3__contains': 'hello'}
     agg_dict = {'field3__count': getattr(django.db.models, 'Count')('field3')}
     result2 = table2.objects.values(*fields).filter(**filters).annotate(**agg_dict)[:table_limit]
-    ####################################################
     print '------------------------------------------------------'
     print result2.query
     print '------------------------------------------------------'
     print result.query
     print '------------------------------------------------------'
 
+    df1 = pd.DataFrame(list(result))
+    df2 = pd.DataFrame(list(result2))
+
+    result = df1.merge(df2, on=fields)
+    print result.head()
+
+    ####################################################
 
     # TODO:将结果构造成一个字典，然后返回json.dumps(dict)
