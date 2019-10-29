@@ -61,11 +61,16 @@ def from_json_get_result(query):
 
     df1 = pd.DataFrame(list(result))
     df2 = pd.DataFrame(list(result2))
-
-    result = df1.merge(df2, on=fields)
-    print df1.head()
-    print '------------------------------------------------------'
+    # how取值：
+    #    - inner = inner (default)
+    #    - outer = full join
+    #    - left  = left join
+    result = df1.merge(df2, on=fields)  # , how='outer')
+    # sort_list = ['field1', 'field2']
+    # result.sort_values(by=sort_list)
     print df2.head()
+    print '------------------------------------------------------'
+    print df1.head()
     print '------------------------------------------------------'
     print result.head()
     print '------------------------------------------------------'
