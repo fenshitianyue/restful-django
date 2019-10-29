@@ -20,7 +20,7 @@ def get_fields(field_list):
     return fields
 
 
-# version1:先测一下单表解析
+# version1:测试join
 def from_json_get_result(query):
     select = dict()
     if query.get('select'):
@@ -52,9 +52,6 @@ def from_json_get_result(query):
                 else:
                     fields.append(getattr(querybuilder.query, 'AvgField')(field, alias=it))
         arguments.append(fields)
-        group_list = list()
-        group_list.append('field1')
-        group_list.append('field2')
         query = Query().from_table(table1, *arguments).where(**select['filter'])
         if select.get('group_by') is not None:
             for it in select['group_by']:
@@ -62,23 +59,25 @@ def from_json_get_result(query):
         if select.get('order_by') is not None:
             for it in select['order_by']:
                 query = query.order_by(it)
+
+        # 多表解析
+        table2 = getattr(api.models, 'Test2')
+        p_list = list()
+        fields = list(['field1', 'field2'])
+        fields.append(getattr(querybuilder.query, 'CountField')('field3', alias='field3__count'))
+        p_list.append(fields)
+        filters = dict({'field1': 'Test1', 'field2__gt': 5, 'field3__contais': 'world'})
+
+        query2 = Query().from_table(table2, *p_list).where(**filters)
+        print query2.get_sql()
+        # query.join(right_table=query2)
+        conditions = 'api_test1.field1=api_test2.field1 AND api_test1.field2=api_test2.field2'
+        query.join(right_table='Test2', condition=conditions, join_type='left join')
+
         print '----------------------------------------------'
         print query.get_sql()
         print '----------------------------------------------'
-        query.select()
+        # query.select()
 
 
-    # if result.exists():
-    #     pass
-    #     # serialize_data = serialize('json', result)
-    #     # print serialize_data
-    #     # print result[0].field1
-    #     # print result[0].field3__count
-    #     # for it in result:
-    #     #     print it.field3__count
-    #     #     print it.field4__sum
-    #     #     print it.field4__avg
-    #     #     print it.field5__count_distinct
-    # else:
-    #     print "not found"
     # TODO:将结果构造成一个字典，然后返回json.dumps(dict)
