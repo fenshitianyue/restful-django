@@ -73,7 +73,6 @@ def from_json_get_result(query):
     join_fields = list()
     if query.get('join') is not None:
         for join_it in query['join']:
-            print join_it
             join_types.append(join_it['type'])
             query_func(join_it['query']['select'], result_set)
             # 收集join连接条件字段
@@ -82,18 +81,20 @@ def from_json_get_result(query):
                 tmp.append(key)
             join_fields.append(tmp)
     print '-----------------------------'
-
     # 进行join
     df_main = pd.DataFrame(list(result_set[0]))
     result_set.remove(result_set[0])
     index = 0
     for it in result_set:
+        # if not it.exists():
+        #     continue
         it = pd.DataFrame(list(it))
         if join_types[index] == 'inner_join':
             df_main = df_main.merge(it, on=join_fields[index])
         elif join_types[index] == 'left_join':
             df_main = df_main.merge(it, on=join_fields[index], how='left')
         elif join_types[index] == 'full_join':
+            print result_set[index].query
             df_main = df_main.merge(it, on=join_fields[index], how='outer')
         else:
             pass
