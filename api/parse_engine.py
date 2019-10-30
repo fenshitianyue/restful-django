@@ -22,9 +22,9 @@ def get_limit(limit):
 def query_func(select, result_set):
     table = get_model(select['from'])
     if select.get('filter') is not None:
-        had_filter = True
+        has_filter = True
     if select.get('aggregation') is not None:
-        had_agg = True
+        has_agg = True
         agg_dict = dict()
         for it in select['aggregation']:
             field = it[:it.find('_')]
@@ -46,11 +46,11 @@ def query_func(select, result_set):
 
     table_limit = get_limit(select.get('limit'))
 
-    if had_filter and had_agg:
+    if has_filter and has_agg:
         result = table.objects.values(*select['group_by']).filter(**select['filter']).annotate(**agg_dict)
-    elif not had_filter and had_agg:
+    elif not has_filter and has_agg:
         result = table.objects.values(*select['group_by']).annotate(**agg_dict)
-    elif had_filter and not had_agg:
+    elif has_filter and not has_agg:
         result = table.objects.values(*select['group_by']).filter(**select['filter'])
     else:
         pass
@@ -62,13 +62,11 @@ def query_func(select, result_set):
     result_set.append(result)
 
 def from_json_get_result(query):
-    select = dict()
     result_set = list()
     join_types = list()
     # 先拿出select字段
     if query.get('select'):
-        select = query['select']
-    query_func(select, result_set)
+        query_func(query['select'], result_set)
     # 再拿出join字段，分别计算后将计算结果添加到集合中
     join_fields = list()
     if query.get('join') is not None:
@@ -86,8 +84,8 @@ def from_json_get_result(query):
     result_set.remove(result_set[0])
     index = 0
     for it in result_set:
-        # if not it.exists():
-        #     continue
+        if not it.exists():
+            continue
         it = pd.DataFrame(list(it))
         if join_types[index] == 'inner_join':
             df_main = df_main.merge(it, on=join_fields[index])
@@ -117,4 +115,6 @@ def from_json_get_result(query):
 
     print df_main.head()
     print '-----------------------------'
+    result_json = df_main.to_json()  # 默认转换后的数据以字符串的形式返回
+    print result_json
 
