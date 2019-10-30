@@ -92,7 +92,6 @@ def from_json_get_result(query):
         elif join_types[index] == 'left_join':
             df_main = df_main.merge(it, on=join_fields[index], how='left')
         elif join_types[index] == 'full_join':
-            print result_set[index].query
             df_main = df_main.merge(it, on=join_fields[index], how='outer')
         else:
             pass
@@ -114,7 +113,18 @@ def from_json_get_result(query):
     df_main = df_main[0:get_limit(query.get('limit'))]
 
     print df_main.head()
+    # field_list = ['field1', 'field2', 'field3__count', 'field4__sum', 'field4__avg', \
+    #               'field5__count_distinct', 'field3_cnt_of_table2', 'field3_cnt_of_table3']
     print '-----------------------------'
-    result_json = df_main.to_json()  # 默认转换后的数据以字符串的形式返回
-    print result_json
+    # 保存查出来的表
+    value = list()
+    for row in df_main.itertuples():
+        line = list()
+        for i in range(len(row) - 1):
+            line.append(row[i+1])
+        value.append(line)
+    for line in value:
+        print line
+    # result_json = df_main.to_json()  # 默认转换后的数据以字符串的形式返回
+    # print result_json
 
