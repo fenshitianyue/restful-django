@@ -31,12 +31,12 @@ def to_test2(data):
 
 def to_test3(data):
     try:
-        tmp = Test2(field1=data['field1'], \
+        tmp = Test3(field1=data['field1'], \
                     field2=data['field2'], \
                     field3=data['field3'])
         tmp.save()
     except Exception as e:
-        print 'fake_data.to_test2 error: %s' % e.message
+        print 'fake_data.to_test3 error: %s' % e.message
         return False
     return True
 
