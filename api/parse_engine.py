@@ -10,6 +10,15 @@ def get_model(model_name):
 def get_attribute(attribute_name):
     return getattr(django.db.models, attribute_name)
 
+def get_limit(limit):
+    if limit is not None:
+        if limit < 10000:
+            return limit
+        else:
+            return 10000
+    else:
+        return 10000
+
 def query_func(select, result_set):
     table = get_model(select['from'])
     if select.get('filter') is not None:
@@ -34,13 +43,8 @@ def query_func(select, result_set):
                     agg_dict.update({it: get_attribute('Avg')(field, distinct=True)})
                 else:
                     agg_dict.update({it: get_attribute('Avg')(field)})
-    if select.get('limit') is not None:
-        if select['limit'] < 10000:
-            table_limit = select['limit']
-        else:
-            table_limit = 10000
-    else:
-        table_limit = 10000
+
+    table_limit = get_limit(select.get('limit'))
 
     if had_filter and had_agg:
         result = table.objects.values(*select['group_by']).filter(**select['filter']).annotate(**agg_dict)
@@ -78,39 +82,37 @@ def from_json_get_result(query):
     ####################################
     # 进行join
     df_main = pd.DataFrame(list(result_set[0]))
-    fields = list() # TODO:
-    for it in joins_type:
-        if it == 'inner_join':
-            df_main = pd.merge(df_main, on=fields)
-        elif it == 'left_join':
-            df_main = pd.merge(df_main, on=fields, how='left')
-        elif it == 'full_join':
-            df_main = pd.merge(df_main, on=fields, how='outer')
+    result_set.remove(result_set[0])
+    fields = list(['field1', 'field2'])  # TODO:
+
+    index = 0
+    for it in result_set:
+        it = pd.DataFrame(list(it))
+        if joins_type[index] == 'inner_join':
+            df_main = df_main.merge(it, on=fields)
+        elif joins_type[index] == 'left_join':
+            df_main = df_main.merge(it, on=fields, how='left')
+        elif joins_type[index] == 'full_join':
+            df_main = df_main.merge(it, on=fields, how='outer')
+        else:
+            pass
+        index += 1
+
     # 对join结果排序
-    if query.get('sort'):
+    if query.get('sort') is not None:
         sort_list = query['sort']
         sort_methods = list()
         for it in sort_list:
-            if it.find('_') != -1:
-                it = it[it.find('_'):]
+            if it.find('-') != -1:
+                it = it[it.find('-'):]
                 sort_methods.append('False')
             else:
                 sort_methods.append('True')
         df_main.sort_values(by=sort_list, ascending=sort_methods)
     # 对join结果分片
-    if query.get('limit'):
-        if query['limit'] < 10000:
-            df_main = df_main[0:query['limit']]
-        else:
-            df_main = df_main[0:10000]
-    else:
-        df_main = df_main[0:10000]
 
+    df_main = df_main[-1:get_limit(query.get('limit'))]
 
-
-
-
-
-
-
+    print df_main.head()
+    print '-----------------------------'
 
