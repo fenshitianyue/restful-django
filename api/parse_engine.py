@@ -64,36 +64,37 @@ def query_func(select, result_set):
 def from_json_get_result(query):
     select = dict()
     result_set = list()
-    joins_type = list()
+    join_types = list()
     # 先拿出select字段
     if query.get('select'):
         select = query['select']
     query_func(select, result_set)
     # 再拿出join字段，分别计算后将计算结果添加到集合中
+    join_fields = list()
     if query.get('join') is not None:
         for join_it in query['join']:
-            joins_type.append(join_it['type'])
+            print join_it
+            join_types.append(join_it['type'])
             query_func(join_it['query']['select'], result_set)
+            # 收集join连接条件字段
+            tmp = list()
+            for key in join_it['on'].keys():
+                tmp.append(key)
+            join_fields.append(tmp)
     print '-----------------------------'
-    ####################################
-    # for it in result_set:
-    #     print it.query
-    #     print '-----------------------------'
-    ####################################
+
     # 进行join
     df_main = pd.DataFrame(list(result_set[0]))
     result_set.remove(result_set[0])
-    fields = list(['field1', 'field2'])  # TODO:
-
     index = 0
     for it in result_set:
         it = pd.DataFrame(list(it))
-        if joins_type[index] == 'inner_join':
-            df_main = df_main.merge(it, on=fields)
-        elif joins_type[index] == 'left_join':
-            df_main = df_main.merge(it, on=fields, how='left')
-        elif joins_type[index] == 'full_join':
-            df_main = df_main.merge(it, on=fields, how='outer')
+        if join_types[index] == 'inner_join':
+            df_main = df_main.merge(it, on=join_fields[index])
+        elif join_types[index] == 'left_join':
+            df_main = df_main.merge(it, on=join_fields[index], how='left')
+        elif join_types[index] == 'full_join':
+            df_main = df_main.merge(it, on=join_fields[index], how='outer')
         else:
             pass
         index += 1
@@ -109,9 +110,9 @@ def from_json_get_result(query):
             else:
                 sort_methods.append('True')
         df_main.sort_values(by=sort_list, ascending=sort_methods)
-    # 对join结果分片
 
-    df_main = df_main[-1:get_limit(query.get('limit'))]
+    # 对join结果分片
+    df_main = df_main[0:get_limit(query.get('limit'))]
 
     print df_main.head()
     print '-----------------------------'
