@@ -51,7 +51,7 @@ def query_func(select, result_set):
     elif not has_filter and has_agg:
         result = table.objects.values(*select['group_by']).annotate(**agg_dict)
     elif has_filter and not has_agg:
-        result = table.objects.values(*select['group_by']).filter(**select['filter'])
+        result = table.objects.filter(**select['filter'])
     else:
         pass
 
