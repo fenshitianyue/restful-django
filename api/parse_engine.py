@@ -58,8 +58,14 @@ def query_func(select, result_set):
         else:
             result = table.objects.annotate(**agg_dict)
     elif has_filter and not has_agg:
+        for it in select['fields']:
+            if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
+                raise SyntaxError('Check the "fields" field in the query')
         result = table.objects.filter(**select['filter'])
     else:
+        for it in select['fields']:
+            if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
+                raise SyntaxError('Check the "fields" field in the query')
         result = table.objects.all()
 
     if select.get('order_by') is not None:
