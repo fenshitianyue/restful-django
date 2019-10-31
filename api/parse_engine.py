@@ -21,6 +21,7 @@ def get_limit(limit):
 
 def query_func(select, result_set):
     table = get_model(select['from'])
+    has_filter, has_agg = False, False
     if select.get('filter') is not None:
         has_filter = True
     if select.get('aggregation') is not None:
@@ -47,13 +48,19 @@ def query_func(select, result_set):
     table_limit = get_limit(select.get('limit'))
 
     if has_filter and has_agg:
-        result = table.objects.values(*select['group_by']).filter(**select['filter']).annotate(**agg_dict)
+        if select.get('group_by') is not None:
+            result = table.objects.values(*select['group_by']).filter(**select['filter']).annotate(**agg_dict)
+        else:
+            result = table.objects.filter(**select['filter'].annotate(**agg_dict))
     elif not has_filter and has_agg:
-        result = table.objects.values(*select['group_by']).annotate(**agg_dict)
+        if select.get('group_by'):
+            result = table.objects.values(*select['group_by']).annotate(**agg_dict)
+        else:
+            result = table.objects.annotate(**agg_dict)
     elif has_filter and not has_agg:
         result = table.objects.filter(**select['filter'])
     else:
-        pass
+        result = table.objects.all()
 
     if select.get('order_by') is not None:
         result = result.order_by(*select['order_by'])[:table_limit]
