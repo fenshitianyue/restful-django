@@ -51,7 +51,7 @@ def query_func(select, result_set):
         if select.get('group_by') is not None:
             result = table.objects.values(*select['group_by']).filter(**select['filter']).annotate(**agg_dict)
         else:
-            result = table.objects.filter(**select['filter']).annotate(**agg_dict)  # TODO:这里可能有bug
+            result = table.objects.filter(**select['filter']).annotate(**agg_dict)
     elif not has_filter and has_agg:
         if select.get('group_by'):
             result = table.objects.values(*select['group_by']).annotate(**agg_dict)
@@ -63,12 +63,18 @@ def query_func(select, result_set):
         如果要更严谨的话，进入这个分支后，判断group_by的字段包含所查询表的所有列，若没有，则报错
         这里暂时从简处理
         """
-        result = table.objects.filter(**select['filter'])
+        for it in select['fields']:
+            if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
+                raise SyntaxError('Check the "fields" field in the query')
+        result = table.objects.filter(**select['filter']).values(*select['fields'])
     else:
         """
         这里同上
         """
-        result = table.objects.all()
+        for it in select['fields']:
+            if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
+                raise SyntaxError('Check the "fields" field in the query')
+        result = table.objects.all().values(*select['fields'])
 
     if select.get('order_by') is not None:
         result = result.order_by(*select['order_by'])[:table_limit]
