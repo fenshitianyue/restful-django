@@ -1,11 +1,12 @@
 # -*- coding:UTF-8 -*-
 
-import api.models
 import django.db.models
 import pandas as pd
+from init_model_set import *
+import model_set
 
 def get_model(model_name):
-    return getattr(api.models, model_name)
+    return getattr(model_set, table_map[model_name])
 
 def get_attribute(attribute_name):
     return getattr(django.db.models, attribute_name)
@@ -29,18 +30,18 @@ def query_func(select, result_set):
         agg_dict = dict()
         for it in select['aggregation']:
             field = it[:it.find('_')]
-            if it.find('count') != -1:
-                if it.find('distinct') != -1:
+            if it.find('__count') != -1:
+                if it.find('_distinct') != -1:
                     agg_dict.update({it: get_attribute('Count')(field, distinct=True)})
                 else:
                     agg_dict.update({it: get_attribute('Count')(field)})
-            if it.find('sum') != -1:
-                if it.find('distinct') != -1:
+            if it.find('__sum') != -1:
+                if it.find('_distinct') != -1:
                     agg_dict.update({it: get_attribute('Sum')(field, distinct=True)})
                 else:
                     agg_dict.update({it: get_attribute('Sum')(field)})
-            if it.find('avg') != -1:
-                if it.find('distinct') != -1:
+            if it.find('__avg') != -1:
+                if it.find('_distinct') != -1:
                     agg_dict.update({it: get_attribute('Avg')(field, distinct=True)})
                 else:
                     agg_dict.update({it: get_attribute('Avg')(field)})
@@ -51,26 +52,30 @@ def query_func(select, result_set):
         if select.get('group_by') is not None:
             result = table.objects.values(*select['group_by']).filter(**select['filter']).annotate(**agg_dict)
         else:
-            result = table.objects.filter(**select['filter'].annotate(**agg_dict))
+            result = table.objects.filter(**select['filter'].annotate(**agg_dict)).values(*select['fields'])
     elif not has_filter and has_agg:
         if select.get('group_by'):
             result = table.objects.values(*select['group_by']).annotate(**agg_dict)
         else:
-            result = table.objects.annotate(**agg_dict)
+            result = table.objects.annotate(**agg_dict).values(*select['fields'])
     elif has_filter and not has_agg:
         for it in select['fields']:
             if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
                 raise SyntaxError('Check the "fields" field in the query')
-        result = table.objects.filter(**select['filter'])
+        result = table.objects.filter(**select['filter']).values(*select['fields'])
     else:
         for it in select['fields']:
             if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
                 raise SyntaxError('Check the "fields" field in the query')
-        result = table.objects.all()
+        result = table.objects.all().values(*select['fields'])
 
     if select.get('order_by') is not None:
+        if it.find('__avg') != -1 or it.find('__sum') != -1 or it.find('__count'):
+            raise SyntaxError('Check your "query" field!')
         result = result.order_by(*select['order_by'])[:table_limit]
     else:
+        if it.find('__avg') != -1 or it.find('__sum') != -1 or it.find('__count'):
+            raise SyntaxError('Check your "query" field!')
         result = result[:table_limit]
     result_set.append(result)
 
@@ -107,7 +112,7 @@ def from_json_get_result(query):
         elif join_types[index] == 'full_join':
             df_main = df_main.merge(it, on=join_fields[index], how='outer')
         else:
-            pass
+            raise SyntaxError('Not support :"%s"' % join_types[index])
         index += 1
 
     # 对join结果排序
@@ -124,10 +129,9 @@ def from_json_get_result(query):
 
     # 对join结果分片
     df_main = df_main[0:get_limit(query.get('limit'))]
+    df_main = df_main.fillna('')
 
     print df_main.head()
-    # field_list = ['field1', 'field2', 'field3__count', 'field4__sum', 'field4__avg', \
-    #               'field5__count_distinct', 'field3_cnt_of_table2', 'field3_cnt_of_table3']
     print '-----------------------------'
     # 保存查出来的表
     value = list()
@@ -136,8 +140,6 @@ def from_json_get_result(query):
         for i in range(len(row) - 1):
             line.append(row[i+1])
         value.append(line)
-    for line in value:
-        print line
-    # result_json = df_main.to_json()  # 默认转换后的数据以字符串的形式返回
-    # print result_json
+    # for line in value:
+    #     print line
 
