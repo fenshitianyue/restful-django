@@ -1,11 +1,15 @@
 # -*- coding:UTF-8 -*-
 
-import api.models
+# import api.models
 import django.db.models
 import pandas as pd
+# from model_set import *
+from init_model_set import *
+import model_set
+
 
 def get_model(model_name):
-    return getattr(api.models, model_name)
+    return getattr(model_set, table_map[model_name])
 
 def get_attribute(attribute_name):
     return getattr(django.db.models, attribute_name)
@@ -20,7 +24,7 @@ def get_limit(limit):
         return 10000
 
 def query_func(select, result_set):
-    table = get_model(select['from'])
+    table = get_model(select['from'])  # select['from']是table_map的key
     has_filter, has_agg = False, False
     if select.get('filter') is not None:
         has_filter = True
@@ -28,7 +32,7 @@ def query_func(select, result_set):
         has_agg = True
         agg_dict = dict()
         for it in select['aggregation']:
-            field = it[:it.find('_')]
+            field = it[:it.find('__')]
             if it.find('count') != -1:
                 if it.find('distinct') != -1:
                     agg_dict.update({it: get_attribute('Count')(field, distinct=True)})
@@ -83,6 +87,14 @@ def query_func(select, result_set):
     result_set.append(result)
 
 def from_json_get_result(query):
+    # table_map = dict()
+    # for (name, _) in inspect.getmembers(api.models, inspect.isclass):
+    #     table_map.update({getattr(api.models, name)._meta.db_table: name})
+
+    # for key in table_map.keys():
+    #     print key, ':', table_map[key]
+    #     print '----------------'
+
     result_set = list()
     join_types = list()
     # 先拿出select字段
@@ -104,8 +116,8 @@ def from_json_get_result(query):
         print it.query
         print '-----------------------------'
     # 进行join
-    # df_main = pd.DataFrame(list(result_set[0]))
-    # result_set.remove(result_set[0])
+    df_main = pd.DataFrame(list(result_set[0]))
+    result_set.remove(result_set[0])
     # index = 0
     # for it in result_set:
     #     if not it.exists():
@@ -134,7 +146,7 @@ def from_json_get_result(query):
     #     df_main.sort_values(by=sort_list, ascending=sort_methods)
 
     # # 对join结果分片
-    # df_main = df_main[0:get_limit(query.get('limit'))]
+     df_main = df_main[0:get_limit(query.get('limit'))]
 
     # print df_main.head()
 
