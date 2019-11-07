@@ -79,7 +79,7 @@ def query_func(select, result_set):
         result = result[:table_limit]
     result_set.append(result)
 
-def from_json_get_result(query):
+def pg_query(query):
     result_set = list()
     join_types = list()
     # 先拿出select字段
@@ -143,3 +143,6 @@ def from_json_get_result(query):
     # for line in value:
     #     print line
 
+
+def es_query(query):
+    pass
