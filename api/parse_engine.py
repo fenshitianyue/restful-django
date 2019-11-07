@@ -60,22 +60,18 @@ def query_func(select, result_set):
             result = table.objects.annotate(**agg_dict).values(*select['fields'])
     elif has_filter and not has_agg:
         for it in select['fields']:
-            if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
+            if it.find('__sum') != -1 or it.find('__avg') != -1 or it.find('__count') != -1:
                 raise SyntaxError('Check the "fields" field in the query')
         result = table.objects.filter(**select['filter']).values(*select['fields'])
     else:
         for it in select['fields']:
-            if it.find('sum') != -1 or it.find('avg') != -1 or it.find('count') != -1:
+            if it.find('__sum') != -1 or it.find('__avg') != -1 or it.find('__count') != -1:
                 raise SyntaxError('Check the "fields" field in the query')
         result = table.objects.all().values(*select['fields'])
 
     if select.get('order_by') is not None:
-        if it.find('__avg') != -1 or it.find('__sum') != -1 or it.find('__count'):
-            raise SyntaxError('Check your "query" field!')
         result = result.order_by(*select['order_by'])[:table_limit]
     else:
-        if it.find('__avg') != -1 or it.find('__sum') != -1 or it.find('__count'):
-            raise SyntaxError('Check your "query" field!')
         result = result[:table_limit]
     result_set.append(result)
 
@@ -145,4 +141,20 @@ def pg_query(query):
 
 
 def es_query(query):
-    pass
+    result_set = list()
+    # join_types = list()
+    # 先拿出select字段
+    if query.get('select'):
+        query_func(query['select'], result_set)
+    query_list = list()
+    for it in result_set:
+        query_list.append(str(it.query))
+    print '-------------------'
+    for it in query_list:
+        print type(it)
+        print it
+        print '-------------------'
+    # TODO:将django query转化为sql
+    # TODO:将sql转化为es dsl
+    # TODO:将每个dsl查询结果收集起来
+    # TODO:将es的查询结果根据join类型在内存中join
