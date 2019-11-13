@@ -14,12 +14,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
 """
 from django.conf.urls import url
-from django.contrib import admin
+# from django.contrib import admin
 import api.views
+import obs.views
 
 urlpatterns = [
     # url(r'^admin/', admin.site.urls),
     url(r'^query_pg/$', api.views.pg_query),
     url(r'^query_es/$', api.views.es_query),
     url(r'^add_data/$', api.views.insert_data),
+    url(r'^obs_catalog$', obs.views.obs_catlog)
 ]
