@@ -160,24 +160,24 @@ def transfer_json_to_sql(select_field):
     elif select_field.get('fields') is not None and select_field.get('aggregation') is None:  # 简单拼接
         for it in select_field['fields']:
             fields_field += select_field['from'] + '.' + it + ','
-    elif select_field.get('fields') is not None and select_field.get('aggregation') is None:  # 复杂拼接
+    elif select_field.get('fields') is not None and select_field.get('aggregation') is not None:  # 复杂拼接
         for it in select_field['aggregation']:
             field = it[:it.find('__')]
             if it.find('__count') != -1:
                 if it.find('_distinct') != -1:
-                    fields_field += 'count(distinct ' + field + ')' + 'as '
+                    fields_field += 'count(distinct ' + field + ') ' + 'as '
                 else:
-                    fields_field += 'count(' + field + ')' + 'as '
+                    fields_field += 'count(' + field + ') ' + 'as '
             if it.find('__sum') != -1:
                 if it.find('_distinct') != -1:
-                    fields_field += 'sum(distinct ' + field + ')' + 'as '
+                    fields_field += 'sum(distinct ' + field + ') ' + 'as '
                 else:
-                    fields_field += 'sum(' + field + ')' + 'as '
+                    fields_field += 'sum(' + field + ') ' + 'as '
             if it.find('__avg') != -1:
                 if it.find('_distinct') != -1:
-                    fields_field += 'avg(distinct ' + field + ')' + 'as '
+                    fields_field += 'avg(distinct ' + field + ') ' + 'as '
                 else:
-                    fields_field += 'avg(' + field + ')' + 'as '
+                    fields_field += 'avg(' + field + ') ' + 'as '
             # 解析出as后面的内容
             for field_it in select_field['fields']:
                 if field in field_it:
@@ -188,7 +188,7 @@ def transfer_json_to_sql(select_field):
                         fields_field += field_it + ','
     else:  # 异常情况
         raise RuntimeError('check your query')
-    fields_field
+    fields_field = fields_field[0:-1] + ' '
     raw_sql += fields_field + from_field
     print '-----------------'
     print raw_sql
