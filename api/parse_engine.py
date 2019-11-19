@@ -20,7 +20,7 @@ def get_limit(limit):
     else:
         return 10000
 
-def query_func(select, result_set):
+def pg_query_func(select, result_set):
     table = get_model(select['from'])
     has_filter, has_agg = False, False
     if select.get('filter') is not None:
@@ -29,7 +29,7 @@ def query_func(select, result_set):
         has_agg = True
         agg_dict = dict()
         for it in select['aggregation']:
-            field = it[:it.find('_')]
+            field = it[:it.find('__')]
             if it.find('__count') != -1:
                 if it.find('_distinct') != -1:
                     agg_dict.update({it: get_attribute('Count')(field, distinct=True)})
@@ -80,19 +80,22 @@ def pg_query(query):
     join_types = list()
     # 先拿出select字段
     if query.get('select'):
-        query_func(query['select'], result_set)
+        pg_query_func(query['select'], result_set)
     # 再拿出join字段，分别计算后将计算结果添加到集合中
     join_fields = list()
     if query.get('join') is not None:
         for join_it in query['join']:
             join_types.append(join_it['type'])
-            query_func(join_it['query']['select'], result_set)
+            pg_query_func(join_it['query']['select'], result_set)
             # 收集join连接条件字段
             tmp = list()
             for key in join_it['on'].keys():
                 tmp.append(key)
             join_fields.append(tmp)
     print '-----------------------------'
+    # raw_sql = str(result_set[0].query)
+    # print raw_sql
+
     # 进行join
     df_main = pd.DataFrame(list(result_set[0]))
     result_set.remove(result_set[0])
@@ -139,22 +142,75 @@ def pg_query(query):
     # for line in value:
     #     print line
 
+def transfer_json_to_sql(select_field):
+    raw_sql = 'select '
+    if select_field.get('from') is None:
+        raise RuntimeError('not found "from" field in "select" field')
+    # 基础字段：from、fields
+    # 收集 from 字段
+    from_field = 'from ' + select_field['from']
+    # 收集 field 字段
+    fields_field = ''
+
+    # fields 为空，aggregtion也为空，默认搜索所有字段
+    # fields 不为空，aggregation为空，简单拼接，不需要解析
+    # fields 不为空，aggregation也不为空，复杂拼接，需要解析
+    # fields 为空，aggregation 不为空，抛出异常
+    if select_field.get('fields') is None and select_field.get('aggregation') is None:  # 默认情况
+        fields_field = '* '
+    elif select_field.get('fields') is not None and select_field.get('aggregation') is None:  # 简单拼接
+        for it in select_field['fields']:
+            fields_field = fields_field + select_field['from'] + '.' + it + ' '
+    elif select_field.get('fields') is not None and select_field.get('aggregation') is None:  # 复杂拼接
+
+        pass
+    else:  # 异常情况
+        raise RuntimeError('check your query')
+    raw_sql += fields_field + from_field
+    print '-----------------'
+    print raw_sql
+    print '-----------------'
+
+    # 收集 filter 字段
+    if select_field.get('filter') is not None:
+        pass
+
+    if select_field.get('group_by') is None and select_field.get('aggregation') is not None:
+        raise RuntimeError('"group_by" must be used with the "aggregation" field')
+    # 收集 group by 字段
+
+    # 收集 limit 字段
+    # 收集 sort 字段
+
+def transfer_sql_to_dsl():
+    pass
 
 def es_query(query):
-    result_set = list()
-    # join_types = list()
-    # 先拿出select字段
-    if query.get('select'):
-        query_func(query['select'], result_set)
-    query_list = list()
-    for it in result_set:
-        query_list.append(str(it.query))
-    print '-------------------'
-    for it in query_list:
-        print type(it)
-        print it
-        print '-------------------'
-    # TODO:将django query转化为sql
-    # TODO:将sql转化为es dsl
+    select_field = query.get('select')
+    # 将json格式的输入转换为sql
+    if select_field is None:
+        raise RuntimeError('"select" field not found!')
+    main_sql = {
+        'join_type': 'null',
+        'sql': ''
+    }
+    main_sql['sql'] = transfer_json_to_sql(select_field)
+    sql_list = [main_sql]
+
+    if query.get('join') is not None:
+        for join_it in query['join']:
+            sql_item = {
+                'join_type': join_it['type'],
+                'join_on': [],
+                'sql': ''
+            }
+            for key in join_it['on'].keys():
+                sql_item['join_on'].append(key)
+            sql_item['sql'] = transfer_json_to_sql(join_it['query']['select'])
+            sql_list.append(sql_item)
+
+
+    # TODO:调用elasticsql将sql转化为es dsl
     # TODO:将每个dsl查询结果收集起来
     # TODO:将es的查询结果根据join类型在内存中join
+    # TODO:将join结果组织一下返回给前端
