@@ -151,7 +151,6 @@ def transfer_json_to_sql(select_field):
     from_field = 'from ' + select_field['from']
     # 收集 field 字段
     fields_field = ''
-
     # fields 为空，aggregtion也为空，默认搜索所有字段
     # fields 不为空，aggregation为空，简单拼接，不需要解析
     # fields 不为空，aggregation也不为空，复杂拼接，需要解析
@@ -160,12 +159,36 @@ def transfer_json_to_sql(select_field):
         fields_field = '* '
     elif select_field.get('fields') is not None and select_field.get('aggregation') is None:  # 简单拼接
         for it in select_field['fields']:
-            fields_field = fields_field + select_field['from'] + '.' + it + ' '
+            fields_field += select_field['from'] + '.' + it + ','
     elif select_field.get('fields') is not None and select_field.get('aggregation') is None:  # 复杂拼接
-
-        pass
+        for it in select_field['aggregation']:
+            field = it[:it.find('__')]
+            if it.find('__count') != -1:
+                if it.find('_distinct') != -1:
+                    fields_field += 'count(distinct ' + field + ')' + 'as '
+                else:
+                    fields_field += 'count(' + field + ')' + 'as '
+            if it.find('__sum') != -1:
+                if it.find('_distinct') != -1:
+                    fields_field += 'sum(distinct ' + field + ')' + 'as '
+                else:
+                    fields_field += 'sum(' + field + ')' + 'as '
+            if it.find('__avg') != -1:
+                if it.find('_distinct') != -1:
+                    fields_field += 'avg(distinct ' + field + ')' + 'as '
+                else:
+                    fields_field += 'avg(' + field + ')' + 'as '
+            # 解析出as后面的内容
+            for field_it in select_field['fields']:
+                if field in field_it:
+                    pos = field_it.find('@')
+                    if pos != -1:
+                        fields_field += field_it[pos:] + ','
+                    else:
+                        fields_field += field_it + ','
     else:  # 异常情况
         raise RuntimeError('check your query')
+    fields_field
     raw_sql += fields_field + from_field
     print '-----------------'
     print raw_sql
