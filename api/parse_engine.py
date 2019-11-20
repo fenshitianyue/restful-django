@@ -209,45 +209,74 @@ def transfer_json_to_sql(select_field):
     fields_field = fields_field[0:-2] + ' '
     raw_sql += fields_field + from_field
 
-    # # 收集 filter 字段
-    # filter_field = 'where '
-    # if select_field.get('filter') is not None:
-    #     for key, value in select_field['filter']:
-    #         pass
+    # 收集 filter 字段
+    filter_field = 'where '
+    if select_field.get('filter') is not None:
+        for key, value in select_field['filter']:
+            if key.find('__gt') != -1:
+                raw_field = key[0:key.find('__gt')]
+                filter_field += raw_field + ' > ' + str(value) + ' and '
+            elif key.find('__gte') != -1:
+                raw_field = key[0:key.find('__gte')]
+                filter_field += raw_field + ' >= ' + str(value) + ' and '
+            elif key.find('__lt') != -1:
+                raw_field = key[0:key.find('__lt')]
+                filter_field += raw_field + ' < ' + str(value)
+            elif key.find('__lte') != -1:
+                raw_field = key[0:key.find('__lte')]
+                filter_field += raw_field + ' <= ' + str(value)
+            elif key.find('__contains') != -1:  # 模糊匹配-全局
+                raw_field = key[0:key.find('__contains')]
+                pass
+            elif key.find('__startswith') != -1:  # 模糊匹配-起始
+                raw_field = key[0:key.find('__startswith')]
+                pass
+            elif key.find('__endswith') != -1:  # 模糊匹配-结尾
+                raw_field = key[0:key.find('__endswith')]
+                pass
+            elif key.find('__range') != -1:  # 范围匹配
+                raw_field = key[0:key.find('__range')]
+                pass
+            elif key.find('__in') != -1:
+                raw_field = key[0:key.find('__in')]
+                pass
+            else:  # 严格匹配
+                filter_field += key + ' = value' + ' and '
 
-    if select_field.get('aggregation') is None and select_field.get('group_by') is not None:
-        raise RuntimeError('"group_by" must be used with the "aggregation" field')
-    # 收集 group by 字段
-    group_by_field = ''
-    if select_field.get('group_by') is not None:
-        for group_by_it in select_field['group_by']:
-            group_by_field += select_field['from'] + '.' + group_by_it + ', '
-    if len(group_by_field) != 0:
-        group_by_field = 'group by ' + group_by_field[0:-2] + ' '
-        raw_sql += group_by_field
-    # 收集 sort 字段
-    sort_field = ''
-    if select_field.get('sort') is not None:
-        for sort_field_it in select_field['sort']:
-            if sort_field_it[0] == '-':
-                sort_field += select_field['from'] + '.' + sort_field_it[1:] + ' desc, '
-            else:
-                sort_field += select_field['from'] + '.' + sort_field_it + ' asc, '
-    if len(sort_field) != 0:
-        sort_field = 'order by ' + sort_field[0:-2] + ' '
-        raw_sql += sort_field
-    # 收集 limit 字段
-    if select_field.get('limit'):
-        if select_field['limit'] > 2000:
-            limit_field = 'limit 2000'
-        else:
-            limit_field = 'limit ' + str(select_field['limit'])
-    else:
-        limit_field = 'limit 2000'
-    raw_sql += limit_field
     print '-----------------'
     print raw_sql
     print '-----------------'
+    # # 检测query语法的正确性：group_by一般必须和聚合函数配合使用，单独使用这里粗暴的定义为异常情况
+    # if select_field.get('aggregation') is None and select_field.get('group_by') is not None:
+    #     raise RuntimeError('"group_by" must be used with the "aggregation" field')
+    # # 收集 group by 字段
+    # group_by_field = ''
+    # if select_field.get('group_by') is not None:
+    #     for group_by_it in select_field['group_by']:
+    #         group_by_field += select_field['from'] + '.' + group_by_it + ', '
+    # if len(group_by_field) != 0:
+    #     group_by_field = 'group by ' + group_by_field[0:-2] + ' '
+    #     raw_sql += group_by_field
+    # # 收集 sort 字段
+    # sort_field = ''
+    # if select_field.get('sort') is not None:
+    #     for sort_field_it in select_field['sort']:
+    #         if sort_field_it[0] == '-':
+    #             sort_field += select_field['from'] + '.' + sort_field_it[1:] + ' desc, '
+    #         else:
+    #             sort_field += select_field['from'] + '.' + sort_field_it + ' asc, '
+    # if len(sort_field) != 0:
+    #     sort_field = 'order by ' + sort_field[0:-2] + ' '
+    #     raw_sql += sort_field
+    # # 收集 limit 字段
+    # if select_field.get('limit'):
+    #     if select_field['limit'] > 2000:
+    #         limit_field = 'limit 2000'
+    #     else:
+    #         limit_field = 'limit ' + str(select_field['limit'])
+    # else:
+    #     limit_field = 'limit 2000'
+    # raw_sql += limit_field
 
 def transfer_sql_to_dsl():
     pass
