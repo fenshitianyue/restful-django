@@ -148,7 +148,7 @@ def transfer_json_to_sql(select_field):
         raise RuntimeError('not found "from" field in "select" field')
     # 基础字段：from、fields
     # 收集 from 字段
-    from_field = 'from ' + select_field['from']
+    from_field = 'from ' + select_field['from'] + ' '
     # 收集 field 字段
     fields_field = ''
     # fields 为空，aggregtion也为空，默认搜索所有字段
@@ -208,9 +208,6 @@ def transfer_json_to_sql(select_field):
         raise RuntimeError('check your query')
     fields_field = fields_field[0:-2] + ' '
     raw_sql += fields_field + from_field
-    print '-----------------'
-    print raw_sql
-    print '-----------------'
 
     # # 收集 filter 字段
     # filter_field = 'where '
@@ -218,32 +215,39 @@ def transfer_json_to_sql(select_field):
     #     for key, value in select_field['filter']:
     #         pass
 
-    # if select_field.get('group_by') is None and select_field.get('aggregation') is not None:
-    #     raise RuntimeError('"group_by" must be used with the "aggregation" field')
-    # # 收集 group by 字段
-    # group_by_field = 'group by '
-    # if select_field.get('group_by') is not None:
-    #     for group_by_it in select_field['group_by']:
-    #         group_by_field += select_field['from'] + '.' + group_by_it + ', '
-    # group_by_field = group_by_field[0:-2] + ' '
-    # # 收集 sort 字段
-    # sort_field = 'order by '
-    # if select_field.get('sort') is not None:
-    #     for sort_field_it in select_field['sort']:
-    #         if sort_field_it[0] == '-':
-    #             sort_field += select_field['from'] + '.' + sort_field_it[1:] + 'desc, '
-    #         else:
-    #             sort_field += select_field['from'] + '.' + sort_field_it + 'asc, '
-    # sort_field = sort_field[0:-2] + ' '
-    # # 收集 limit 字段
-    # # limit_field = ''
-    # if select_field.get('limit'):
-    #     if select_field['limit'] > 2000:
-    #         limit_field = 'limit 2000'
-    #     else:
-    #         limit_field = 'limit ' + str(select_field['limit'])
-    # else:
-    #     limit_field = 'limit 2000'
+    if select_field.get('aggregation') is None and select_field.get('group_by') is not None:
+        raise RuntimeError('"group_by" must be used with the "aggregation" field')
+    # 收集 group by 字段
+    group_by_field = ''
+    if select_field.get('group_by') is not None:
+        for group_by_it in select_field['group_by']:
+            group_by_field += select_field['from'] + '.' + group_by_it + ', '
+    if len(group_by_field) != 0:
+        group_by_field = 'group by ' + group_by_field[0:-2] + ' '
+        raw_sql += group_by_field
+    # 收集 sort 字段
+    sort_field = ''
+    if select_field.get('sort') is not None:
+        for sort_field_it in select_field['sort']:
+            if sort_field_it[0] == '-':
+                sort_field += select_field['from'] + '.' + sort_field_it[1:] + ' desc, '
+            else:
+                sort_field += select_field['from'] + '.' + sort_field_it + ' asc, '
+    if len(sort_field) != 0:
+        sort_field = 'order by ' + sort_field[0:-2] + ' '
+        raw_sql += sort_field
+    # 收集 limit 字段
+    if select_field.get('limit'):
+        if select_field['limit'] > 2000:
+            limit_field = 'limit 2000'
+        else:
+            limit_field = 'limit ' + str(select_field['limit'])
+    else:
+        limit_field = 'limit 2000'
+    raw_sql += limit_field
+    print '-----------------'
+    print raw_sql
+    print '-----------------'
 
 def transfer_sql_to_dsl():
     pass
