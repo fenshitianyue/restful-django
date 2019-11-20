@@ -215,31 +215,31 @@ def transfer_json_to_sql(select_field):
         for key, value in select_field['filter']:
             if key.find('__gt') != -1:
                 raw_field = key[0:key.find('__gt')]
-                filter_field += raw_field + ' > ' + str(value) + ' and '
+                filter_field += select_field['from'] + '.' + raw_field + ' > ' + str(value) + ' and '
             elif key.find('__gte') != -1:
                 raw_field = key[0:key.find('__gte')]
-                filter_field += raw_field + ' >= ' + str(value) + ' and '
+                filter_field += select_field['from'] + '.' + raw_field + ' >= ' + str(value) + ' and '
             elif key.find('__lt') != -1:
                 raw_field = key[0:key.find('__lt')]
-                filter_field += raw_field + ' < ' + str(value)
+                filter_field += select_field['from'] + '.' + raw_field + ' < ' + str(value) + ' and '
             elif key.find('__lte') != -1:
                 raw_field = key[0:key.find('__lte')]
-                filter_field += raw_field + ' <= ' + str(value)
+                filter_field += select_field['from'] + '.' + raw_field + ' <= ' + str(value) + ' and '
             elif key.find('__contains') != -1:  # 模糊匹配-全局
                 raw_field = key[0:key.find('__contains')]
-                pass
+                filter_field += select_field['from'] + '.' + raw_field + ' like \%' + value + '\% ' + ' and '
             elif key.find('__startswith') != -1:  # 模糊匹配-起始
                 raw_field = key[0:key.find('__startswith')]
-                pass
+                filter_field += select_field['from'] + '.' + raw_field + ' like ' + value + '\% ' + ' and '
             elif key.find('__endswith') != -1:  # 模糊匹配-结尾
                 raw_field = key[0:key.find('__endswith')]
-                pass
+                filter_field += select_field['from'] + '.' + raw_field + ' like \%' + value + ' ' + ' and '
             elif key.find('__range') != -1:  # 范围匹配
                 raw_field = key[0:key.find('__range')]
-                pass
             elif key.find('__in') != -1:
                 raw_field = key[0:key.find('__in')]
-                pass
+                filter_field += select_field['from'] + '.' + raw_field + ' in ('
+
             else:  # 严格匹配
                 filter_field += key + ' = value' + ' and '
 
