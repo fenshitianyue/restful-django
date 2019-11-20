@@ -159,51 +159,91 @@ def transfer_json_to_sql(select_field):
         fields_field = '* '
     elif select_field.get('fields') is not None and select_field.get('aggregation') is None:  # 简单拼接
         for it in select_field['fields']:
-            fields_field += select_field['from'] + '.' + it + ','
+            fields_field += select_field['from'] + '.' + it + ', '
     elif select_field.get('fields') is not None and select_field.get('aggregation') is not None:  # 复杂拼接
+        # 拼接除聚合以外的字段
+        for field_it in select_field['fields']:
+            if field_it.find('__') == -1:
+                fields_field += select_field['from'] + '.' + field_it + ', '
+        # 拼接聚合的字段
         for it in select_field['aggregation']:
-            field = it[:it.find('__')]
+            raw_field = it[:it.find('__')]
+            field = select_field['from'] + '.' + raw_field
             if it.find('__count') != -1:
                 if it.find('_distinct') != -1:
                     fields_field += 'count(distinct ' + field + ') ' + 'as '
                 else:
                     fields_field += 'count(' + field + ') ' + 'as '
+                    for field_it in select_field['fields']:
+                        if it in field_it:
+                            fields_field += field_it + ', '
+                    continue
             if it.find('__sum') != -1:
                 if it.find('_distinct') != -1:
                     fields_field += 'sum(distinct ' + field + ') ' + 'as '
                 else:
                     fields_field += 'sum(' + field + ') ' + 'as '
+                    for field_it in select_field['fields']:
+                        if it in field_it:
+                            fields_field += field_it + ', '
+                    continue
             if it.find('__avg') != -1:
                 if it.find('_distinct') != -1:
                     fields_field += 'avg(distinct ' + field + ') ' + 'as '
                 else:
                     fields_field += 'avg(' + field + ') ' + 'as '
-            # 解析出as后面的内容
+                    for field_it in select_field['fields']:
+                        if it in field_it:
+                            fields_field += field_it + ', '
+                    continue
             for field_it in select_field['fields']:
-                if field in field_it:
+                if raw_field in field_it:
                     pos = field_it.find('@')
                     if pos != -1:
-                        fields_field += field_it[pos:] + ','
+                        fields_field += field_it[pos+1:] + ', '
                     else:
-                        fields_field += field_it + ','
+                        raise RuntimeError('check your query')
+                    break
     else:  # 异常情况
         raise RuntimeError('check your query')
-    fields_field = fields_field[0:-1] + ' '
+    fields_field = fields_field[0:-2] + ' '
     raw_sql += fields_field + from_field
     print '-----------------'
     print raw_sql
     print '-----------------'
 
-    # 收集 filter 字段
-    if select_field.get('filter') is not None:
-        pass
+    # # 收集 filter 字段
+    # filter_field = 'where '
+    # if select_field.get('filter') is not None:
+    #     for key, value in select_field['filter']:
+    #         pass
 
-    if select_field.get('group_by') is None and select_field.get('aggregation') is not None:
-        raise RuntimeError('"group_by" must be used with the "aggregation" field')
-    # 收集 group by 字段
-
-    # 收集 limit 字段
-    # 收集 sort 字段
+    # if select_field.get('group_by') is None and select_field.get('aggregation') is not None:
+    #     raise RuntimeError('"group_by" must be used with the "aggregation" field')
+    # # 收集 group by 字段
+    # group_by_field = 'group by '
+    # if select_field.get('group_by') is not None:
+    #     for group_by_it in select_field['group_by']:
+    #         group_by_field += select_field['from'] + '.' + group_by_it + ', '
+    # group_by_field = group_by_field[0:-2] + ' '
+    # # 收集 sort 字段
+    # sort_field = 'order by '
+    # if select_field.get('sort') is not None:
+    #     for sort_field_it in select_field['sort']:
+    #         if sort_field_it[0] == '-':
+    #             sort_field += select_field['from'] + '.' + sort_field_it[1:] + 'desc, '
+    #         else:
+    #             sort_field += select_field['from'] + '.' + sort_field_it + 'asc, '
+    # sort_field = sort_field[0:-2] + ' '
+    # # 收集 limit 字段
+    # # limit_field = ''
+    # if select_field.get('limit'):
+    #     if select_field['limit'] > 2000:
+    #         limit_field = 'limit 2000'
+    #     else:
+    #         limit_field = 'limit ' + str(select_field['limit'])
+    # else:
+    #     limit_field = 'limit 2000'
 
 def transfer_sql_to_dsl():
     pass
