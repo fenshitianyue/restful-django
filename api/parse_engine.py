@@ -73,6 +73,8 @@ def pg_query_func(select, result_set):
         result = result.order_by(*select['order_by'])[:table_limit]
     else:
         result = result[:table_limit]
+    print '----------------'
+    print result.query
     result_set.append(result)
 
 def pg_query(query):
@@ -98,6 +100,9 @@ def pg_query(query):
 
     # 进行join
     df_main = pd.DataFrame(list(result_set[0]))
+    print '------------------'
+    print df_main.head()
+    print '------------------'
     result_set.remove(result_set[0])
     index = 0
     for it in result_set:
