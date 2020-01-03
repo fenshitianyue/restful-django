@@ -30,7 +30,7 @@ def parse_json_to_sql(raw_query=None):
             query.sql_group_by.append('{},'.format(field))
         query.sql_group_by[-1] = query.sql_group_by[-1][:-1]  # 去掉最后的','
 
-        if raw_query.get('aggregation'):  # TODO: 处理 fields 的遗留问题
+        if raw_query.get('aggregation'):
             func_map = {
                 'count':            lambda query, field: query.sql_select.append('count({0}) as {0}__count,'.format(field)),
                 'sum':              lambda query, field: query.sql_select.append('sum({0}) as {0}__sum,'.format(field)),
